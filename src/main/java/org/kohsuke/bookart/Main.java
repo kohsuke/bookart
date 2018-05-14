@@ -94,11 +94,13 @@ public class Main {
     private List<Float> findEdges(int x) {
         final List<Float> edges = new ArrayList<>();
         final int h = canvas.getHeight();
+        final float topMargin = (pageHeight - imageHeight) / 2;
 
         for (int y = 1; y< h; y++) {
             if (bw(pick(x, y-1))
-             != bw(pick(x, y)))
-                edges.add(round(imageHeight*y/h+pageHeight/2));
+             != bw(pick(x, y))) {
+                edges.add(round(imageHeight*y/h+ topMargin));
+            }
         }
         return edges;
     }
