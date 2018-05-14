@@ -2,7 +2,6 @@ package org.kohsuke.bookart;
 
 import org.apache.commons.io.IOUtils;
 import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
@@ -34,6 +33,7 @@ public class Main {
 
     @Option(name="-h",usage="Height of the image")
     public float imageHeight;
+    private BufferedImage canvas;
 
     public static void main(String[] args) throws Exception {
         new Main().run(args);
@@ -42,7 +42,7 @@ public class Main {
     private void run(String[] args) throws Exception {
         new CmdLineParser(this).parseArgument(args);
 
-        BufferedImage canvas = ImageIO.read(image);
+        canvas = ImageIO.read(image);
 
         StringBuilder instructions = new StringBuilder();
 
@@ -50,19 +50,14 @@ public class Main {
             final int x = (canvas.getWidth()*i)/slices;
 
             // scan a line and find edges
-            List<Integer> edges = new ArrayList<Integer>();
-            for (int y=1; y<canvas.getHeight(); y++) {
-                if (bw(pick(canvas, x, y-1))
-                 != bw(pick(canvas, x, y)))
-                    edges.add(y);
-            }
+            List<Float> edges = findEdges(x);
 
-            // TODO: remove noise
+            noiseReduction(edges);
 
             instructions.append("<div>Page ").append(i*2+start).append(": ");
             for (int j=0; j<edges.size(); j++) {
                 if (j>0)    instructions.append(", ");
-                instructions.append(round(imageHeight*edges.get(j)/canvas.getHeight()+pageHeight/2));
+                instructions.append(edges.get(j));
             }
             instructions.append("</div>");
 
@@ -78,13 +73,42 @@ public class Main {
     }
 
     /**
+     * Very short 'up' region is not stable, so remove them.
+     */
+    private void noiseReduction(List<Float> edges) {
+        for (int i=0; i<edges.size()-1; ) {
+            if (edges.get(i+1)-edges.get(i)<=0.1) {
+                edges.remove(i);
+                edges.remove(i);
+            } else {
+                i++;
+            }
+        }
+    }
+
+    /**
+     * Scans a vertical line and find all the edges.
+     */
+    private List<Float> findEdges(int x) {
+        final List<Float> edges = new ArrayList<>();
+        final int h = canvas.getHeight();
+
+        for (int y = 1; y< h; y++) {
+            if (bw(pick(x, y-1))
+             != bw(pick(x, y)))
+                edges.add(round(imageHeight*y/h+pageHeight/2));
+        }
+        return edges;
+    }
+
+    /**
      * Round at the mm unit
      */
     private float round(float f) {
         return (float) (Math.round(f*10)/10.0);
     }
 
-    private Color pick(BufferedImage canvas, int x, int y) {
+    private Color pick(int x, int y) {
         return new Color(canvas.getRGB(x,y));
     }
 
