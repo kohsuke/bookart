@@ -57,7 +57,9 @@ public class Main {
             instructions.append("<div>Page ").append(i*2+start).append(": ");
             for (int j=0; j<edges.size(); j++) {
                 if (j>0)    instructions.append(", ");
+                if (j%2==0) instructions.append("<div>(");
                 instructions.append(edges.get(j));
+                if (j%2==1) instructions.append(")</div>");
             }
             instructions.append("</div>");
 
